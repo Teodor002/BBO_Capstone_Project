@@ -1,8 +1,6 @@
 # BBO_Capstone_Project
 Bayesian Black-Box Optimization Capstone Project
-Ah, sada razumem – želiš da budu boldovani samo naslovi paragrafa (npr. “Section 1: Project Overview”), dok tekst u paragrafima ne bude boldovan ni delimično. 🙂
 
-Evo ispravljene verzije:
 
 BBO (Black-Box Optimisation) Capstone Project
 Section 1: Project Overview
