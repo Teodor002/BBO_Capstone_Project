@@ -1,0 +1,176 @@
+import numpy as np
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import Matern, WhiteKernel, ConstantKernel as C
+
+
+# =========================
+# LOAD DATA
+# =========================
+def load_data():
+    """
+    Load initial dataset and append additional sampled points.
+    """
+
+    X = np.load(r"C:\Users\Lenovo\Downloads\Initial_data_points_starter (1)\initial_data\function_2\initial_inputs.npy")
+    y = np.load(r"C:\Users\Lenovo\Downloads\Initial_data_points_starter (1)\initial_data\function_2\initial_outputs.npy")
+
+    # Additional manually sampled points
+    x_new = np.array([
+        [0.234789, 0.671345],
+        [0.745679, 0.900000],
+        [0.737373, 1.000000],
+        [0.999489, 0.002184],
+        [0.773013, 0.998906],
+        [0.119321, 0.678744],
+        [0.702637, 0.926564],
+        [0.707071, 0.909091],
+        [0.856563, 0.938151]
+    ])
+
+    y_new = np.array([
+        -0.075853,
+        0.541252,
+        0.666965,
+        -0.103574,
+        0.044178,
+        -0.037561,
+        0.716834,
+        0.68312269,
+        0.07447866279758372
+    ])
+
+    # Merge original and additional data
+    X = np.vstack([X, x_new])
+    y = np.append(y, y_new)
+
+    return X, y
+
+
+# =========================
+# MODEL DEFINITION
+# =========================
+def create_model():
+    """
+    Create a Gaussian Process model with Matern kernel.
+    """
+
+    kernel = C(1.0) * Matern(length_scale=0.2, nu=2.5) + WhiteKernel(1e-5)
+
+    gp = GaussianProcessRegressor(
+        kernel=kernel,
+        normalize_y=True,
+        n_restarts_optimizer=5,
+        random_state=42
+    )
+
+    return gp
+
+
+# =========================
+# CANDIDATE GENERATION
+# =========================
+def generate_candidates(best_x, dim, search_std, n_local=4000, n_global=1000):
+    """
+    Generate candidate points using a combination of local and global search.
+
+    Local search: samples around the current best solution
+    Global search: uniform random sampling across the domain
+    """
+
+    # Local exploration around current best point
+    local = best_x + np.random.normal(0, search_std, size=(n_local, dim))
+
+    # Enforce bounds [0, 1]
+    local = np.clip(local, 0, 1)
+
+    # Global exploration
+    global_samples = np.random.rand(n_global, dim)
+
+    return np.vstack([local, global_samples])
+
+
+# =========================
+# ACQUISITION FUNCTION (UCB)
+# =========================
+def acquisition(mu, sigma, kappa=0.1):
+    """
+    Upper Confidence Bound (UCB) acquisition function.
+
+    Encourages exploration via uncertainty term.
+    """
+
+    sigma = np.maximum(sigma, 1e-9)
+    return mu + kappa * sigma
+
+
+# =========================
+# OPTIMIZATION LOOP
+# =========================
+def optimize(X, y, num_iterations=100):
+    """
+    Perform iterative surrogate-based optimization using Gaussian Processes.
+    """
+
+    dim = X.shape[1]
+    gp = create_model()
+
+    # Initialize best solution
+    best_idx = np.argmax(y)
+    best_x = X[best_idx]
+    best_y = y[best_idx]
+
+    search_std = 0.25   # initial exploration radius
+    kappa = 0.1         # exploration-exploitation trade-off
+
+    for it in range(1, num_iterations + 1):
+
+        # Fit surrogate model
+        gp.fit(X, y)
+
+        # Generate candidate points
+        candidates = generate_candidates(best_x, dim, search_std)
+
+        # Predict mean and uncertainty
+        mu, sigma = gp.predict(candidates, return_std=True)
+
+        # Compute acquisition scores
+        scores = acquisition(mu, sigma, kappa)
+
+        # Select best candidate
+        idx = np.argmax(scores)
+        x_next = candidates[idx]
+
+        # Surrogate-based evaluation (replace with real function if available)
+        y_next = mu[idx] + 0.03 * sigma[idx]
+
+        # Update dataset
+        X = np.vstack([X, x_next])
+        y = np.append(y, y_next)
+
+        # Update best solution if improved
+        if y_next > best_y:
+            best_y = y_next
+            best_x = x_next
+
+        # Gradually reduce search radius (annealing)
+        search_std *= 0.97
+
+        print(f"Iter {it}/{num_iterations} | Best: {best_y:.6f}")
+
+    return best_x, best_y
+
+
+# =========================
+# MAIN EXECUTION
+# =========================
+if __name__ == "__main__":
+    np.random.seed(42)
+
+    X, y = load_data()
+    best_x, best_y = optimize(X, y)
+
+    print("\n=== FINAL RESULT ===")
+    print("Best value:", best_y)
+    print("Best x:", best_x)
+
+
