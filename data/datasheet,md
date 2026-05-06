@@ -1,0 +1,32 @@
+# Datasheet for BBO Capstone Project
+
+## Dataset Overview
+The dataset used in this project comes from a black-box optimisation (BBO) environment provided as part of the capstone challenge. The objective was to optimise multiple unknown functions (F1–F8) with very limited observations.
+
+## Data Collection Process
+Data was collected iteratively over 13 weeks. At each iteration, a new input vector was submitted and the corresponding output value was returned. This process simulates real-world scenarios where data is expensive and must be acquired sequentially.
+
+## Data Characteristics
+
+- High uncertainty due to unknown function structure
+- Potential noise in function evaluations
+- Multi-dimensional inputs (varying across functions)
+
+## Limitations
+- The true form of the underlying functions is unknown
+- Sparse data makes it difficult to fully capture global structure
+- Some functions exhibit unstable or noisy behaviour
+- Results may not be reproducible due to stochastic elements
+
+## Bias and Risks
+- Early samples may bias the model toward suboptimal regions
+- Overfitting is a risk due to small sample size
+- Exploration-exploitation trade-off may lead to incomplete coverage of the search space
+
+## Intended Use
+This dataset is intended for experimentation with optimisation strategies, particularly Bayesian Optimisation techniques, in low-data and high-uncertainty environments.
+
+## Not Intended Use
+The dataset is not suitable for:
+- Supervised learning tasks with large datasets
+- Generalisation to real-world systems without further validation
